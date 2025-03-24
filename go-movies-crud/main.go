@@ -1,0 +1,63 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+	"encoding/json"
+	"math/rand"
+	"strconv"
+	"github.com/gorilla/mux"
+)
+
+type Movie struct {
+	ID string `json:"id"`
+	Isbn string `json:"isbn"`
+	Title string `json:"title"`
+	Director *Director `json:"director"`
+}
+
+type Director struct {
+	Firstname string `json:"firstname"`
+	Lastname string `json:"lastname"`
+}
+
+var movies []Movie
+
+func getMovies(w http.ResponseWriter, r *http.Request){
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(movies)
+}
+
+func deleteMovie(w http.ResponseWriter, r* http.Request){
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	for index, item := range movies {
+		
+		if item.ID == params["id"] {
+			movies = append(movies[:index], movies[index+1:]...)
+			break
+		}
+	}
+	json.NewEncoder(w).Encode(movies)
+}
+
+func main() {
+	r := mux.NewRouter()
+
+	movies = append(movies,
+		Movie{ID: "1", Isbn: "438227", Title: "The Dark Knight", Director: &Director{Firstname: "Christopher", Lastname: "Nolan"}},
+		Movie{ID: "2", Isbn: "552199", Title: "Iron Man", Director: &Director{Firstname: "Jon", Lastname: "Favreau"}},
+		Movie{ID: "3", Isbn: "773011", Title: "Titanic", Director: &Director{Firstname: "James", Lastname: "Cameron"}},
+		Movie{ID: "4", Isbn: "884422", Title: "The Grand Budapest Hotel", Director: &Director{Firstname: "Wes", Lastname: "Anderson"}},
+		Movie{ID: "5", Isbn: "991288", Title: "Pulp Fiction", Director: &Director{Firstname: "Quentin", Lastname: "Tarantino"}},
+		Movie{ID: "6", Isbn: "664298", Title: "Inception", Director: &Director{Firstname: "Christopher", Lastname: "Nolan"}},
+	)
+
+	r.HandleFunc("/movies", getMovies).Methods("GET")
+	r.HandleFunc("/movies/{id}", deleteMovie).Methods("DELETE")
+	
+	fmt.Println("Server starting on port 8080")
+	log.Fatal(http.ListenAndServe(":8080", r))
+
+}
