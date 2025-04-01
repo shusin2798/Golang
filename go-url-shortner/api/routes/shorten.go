@@ -2,8 +2,9 @@ package routes
 
 import (
 	"time"
-
-	"github.com/gofiber/fiber"
+    "github.com/shusin2798/Golang/go-url-shortner/helpers"
+	"github.com/gofiber/fiber/v2"
+	"github.com/asaskevich/govalidator"
 )
 
 type request struct {
@@ -46,4 +47,17 @@ func ShortenURL(c *fiber.Ctx) error {
 	}
 	//enforce http/ssl
 	body.URL = helpers.EnforceHTTP(body.URL)
+
+	//return c.Status(fiber.StatusOK).JSON(fiber.Map{
+	//	"error":   false,
+	//	"message": "URL shortened successfully",
+	//	"data": response{
+	//		URL:         body.URL,
+	//		CustomShort: body.CustomShort,
+	//		Expiry:      body.Expiry,
+	//		XRateRemaining: 0,
+	//		XRateLimitReset: 0,
+	//	},
+	//})
+	
 }
