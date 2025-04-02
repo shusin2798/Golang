@@ -5,6 +5,8 @@ import (
     "github.com/shusin2798/Golang/go-url-shortner/helpers"
 	"github.com/gofiber/fiber/v2"
 	"github.com/asaskevich/govalidator"
+	"github.com/shusin2798/Golang/go-url-shortner/database"
+	"os"
 )
 
 type request struct {
@@ -31,6 +33,22 @@ func ShortenURL(c *fiber.Ctx) error {
 	}
 
 	//implement rate limiting
+	r2 := database.CreateClient(1)
+	defer r2.Close()
+	val, err := r2.Get(database.Ctx, c.IP()).Result()
+	if err == nil {
+		_ = r2.Set(database.Ctx, c.IP(), os.Getenv("API_QUOTA"), 30*30*time.Second).Err()
+	} else {
+		val, _ := r2.Get(database.Ctx, c.IP().Result())
+		valInt, _ := strconv.Atoi(val)
+		if valInt <= 0 {
+			limit, _ := r2.Get(database.Ctx, c.IP()).Result()
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+				"error":   true,
+				"message": "Rate limit exceeded",
+				"rate_limit_reset": limit / time.Nanosecond / time.Minute,
+			})
+	}
 	//check if input is an actual URL
 	if !govalidator.IsURL(body.URL) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -48,16 +66,5 @@ func ShortenURL(c *fiber.Ctx) error {
 	//enforce http/ssl
 	body.URL = helpers.EnforceHTTP(body.URL)
 
-	//return c.Status(fiber.StatusOK).JSON(fiber.Map{
-	//	"error":   false,
-	//	"message": "URL shortened successfully",
-	//	"data": response{
-	//		URL:         body.URL,
-	//		CustomShort: body.CustomShort,
-	//		Expiry:      body.Expiry,
-	//		XRateRemaining: 0,
-	//		XRateLimitReset: 0,
-	//	},
-	//})
-	
+	r2.Decr(database.Ctx, c.IP())
 }
