@@ -3,9 +3,7 @@ package routes
 import (
 	"os"
 	"time"
-
 	"strconv"
-
 	"github.com/asaskevich/govalidator"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -45,7 +43,7 @@ func ShortenURL(c *fiber.Ctx) error {
 	} else {
 		valInt, _ := strconv.Atoi(val)
 		if valInt <= 0 {
-			limit, _ := r2.Get(database.Ctx, c.IP()).Result()
+			limit, _ := r2.TTL(database.Ctx, c.IP()).Result()
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
 				"error":            true,
 				"message":          "Rate limit exceeded",
